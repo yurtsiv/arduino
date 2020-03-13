@@ -12,9 +12,12 @@ void printResults(int pin, float voltage, int sensorValue) {
   Serial.print(measureResultsBuffer);
 }
 
+
+int sensorValue;
+float voltage;
 void loop() {
-  delay(400);
-  int sensorValue = analogRead(VOLTAGE_MEASURE_PIN);
-  float voltage =  sensorValue * (5.0 / 1023.0);
+  sensorValue = analogRead(VOLTAGE_MEASURE_PIN);
+  voltage =  sensorValue * (5.0 / 1023.0);
   printResults(1, voltage, sensorValue);
+  delay(50);
 }
