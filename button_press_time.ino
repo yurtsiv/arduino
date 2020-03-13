@@ -1,7 +1,7 @@
 #include "math.h"
 
 #define RED_BUTTON 2
-#define GREEN_BUTTON 3
+#define GREEN_BUTTON 4
 
 bool buttonRedPressed = false;
 bool buttonRedReleased = false;
