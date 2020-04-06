@@ -9,7 +9,7 @@ void printResults(int pin, float voltage, int sensorValue) {
   String vlotageStr = String(voltage);
   sprintf(measureResultsBuffer, "\nMiernik A%d\nV=%s  ADC=%d", pin, vlotageStr.c_str(), sensorValue);
 
-  Serial.print(measureResultsBuffer);
+  Serial.println(voltage);
 }
 
 
