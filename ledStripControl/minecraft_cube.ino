@@ -1,7 +1,6 @@
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 #define FASTLED_ESP8266_RAW_PIN_ORDER
 
-/******************  LIBRARY SECTION *************************************/
 #include <FastLED.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
@@ -10,7 +9,7 @@
 #include <ESP8266WebServer.h>
 
 // LED
-#define NUM_LEDS 6
+#define NUM_LEDS 7
 #define DATA_PIN D7
 
 CRGB leds[NUM_LEDS];
@@ -23,9 +22,82 @@ int fadeOutTime = 1500;
 int fadeInStepDelay = 0;
 int fadeOutStepDelay = 0;
 int hue = 0;
-int brightness = minBrightness;
+int brightness = maxBrightness;
 bool fadingIn = true;
 bool runColorsTransition = true;
+
+
+// WI-FI
+const char *ssid = "<WI-FI name";
+const char *password = "<WI-FI password>";
+
+ESP8266WiFiMulti wifiMulti;
+
+ESP8266WebServer server(80);
+
+unsigned long previousHTTPTime = 0;
+const long httpTimeoutTime = 2000;
+
+// Variable to store the HTTP request
+String header;
+
+void setup()
+{
+  Serial.begin(115200); // Start the Serial communication to send messages to the computer
+  delay(10);
+  Serial.println('\n');
+
+  // LED
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  setRandomHue();
+  udpateTransitionVars();
+  updateLed();
+
+  // WI-FI
+  wifiMulti.addAP(ssid, password);
+  Serial.println("Connecting ...");
+  int i = 0;
+  while (wifiMulti.run() != WL_CONNECTED)
+  { // Wait for the Wi-Fi to connect: scan for Wi-Fi networks, and connect to the strongest of the networks above
+    delay(250);
+    Serial.print('.');
+  }
+
+  Serial.println('\n');
+  Serial.print("Connected to ");
+  Serial.println(WiFi.SSID());
+  Serial.print("IP address:\t");
+  Serial.println(WiFi.localIP());
+
+  if (MDNS.begin("cube"))
+  { // Start the mDNS responder for cube.local
+    Serial.println("mDNS responder started");
+  }
+  else
+  {
+    Serial.println("Error setting up MDNS responder!");
+  }
+
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/transition", HTTP_POST, handleTransition);
+  server.on("/random", HTTP_POST, handleRandom);
+  server.on("/set_brightness", HTTP_POST, handleBrightness);
+  server.on("/fade_time", HTTP_POST, handleFadeTime);
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop()
+{
+  MDNS.update();
+
+  updateLed();
+  colorsTransition();
+  server.handleClient();
+}
+
 
 void udpateTransitionVars()
 {
@@ -94,78 +166,6 @@ void colorsTransition()
       }
     }
   }
-}
-
-// WI-FI
-const char *ssid = "WLAN1-4JHQ3Y";
-const char *password = "owl_cucumber_1";
-
-ESP8266WiFiMulti wifiMulti; // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
-
-ESP8266WebServer server(80); // Create a webserver object that listens for HTTP request on port 80
-
-void handleRoot(); // function prototypes for HTTP handlers
-void handleNotFound();
-
-unsigned long previousHTTPTime = 0;
-const long httpTimeoutTime = 2000;
-
-// Variable to store the HTTP request
-String header;
-
-void setup()
-{
-  Serial.begin(115200); // Start the Serial communication to send messages to the computer
-  delay(10);
-  Serial.println('\n');
-
-  // LED
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  udpateTransitionVars();
-
-  // WI-FI
-  wifiMulti.addAP(ssid, password);
-  Serial.println("Connecting ...");
-  int i = 0;
-  while (wifiMulti.run() != WL_CONNECTED)
-  { // Wait for the Wi-Fi to connect: scan for Wi-Fi networks, and connect to the strongest of the networks above
-    delay(250);
-    Serial.print('.');
-  }
-
-  Serial.println('\n');
-  Serial.print("Connected to ");
-  Serial.println(WiFi.SSID()); // Tell us what network we're connected to
-  Serial.print("IP address:\t");
-  Serial.println(WiFi.localIP()); // Send the IP address of the ESP8266 to the computer
-
-  if (MDNS.begin("cube"))
-  { // Start the mDNS responder for cube.local
-    Serial.println("mDNS responder started");
-  }
-  else
-  {
-    Serial.println("Error setting up MDNS responder!");
-  }
-
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/transition", HTTP_POST, handleTransition);
-  server.on("/random", HTTP_POST, handleRandom);
-  server.on("/set_brightness", HTTP_POST, handleBrightness);
-  server.on("/fade_time", HTTP_POST, handleFadeTime);
-  server.onNotFound(handleNotFound);
-
-  server.begin();
-  Serial.println("HTTP server started");
-}
-
-void loop()
-{
-  MDNS.update();
-
-  updateLed();
-  colorsTransition();
-  server.handleClient();
 }
 
 void handleRoot()
