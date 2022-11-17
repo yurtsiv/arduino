@@ -28,7 +28,7 @@ bool runColorsTransition = true;
 
 
 // WI-FI
-const char *ssid = "<WI-FI name";
+const char *ssid = "<WI-FI name>";
 const char *password = "<WI-FI password>";
 
 ESP8266WiFiMulti wifiMulti;
